@@ -13,6 +13,7 @@ docker rm -f "$CONTAINER_NAME" 2>/dev/null || true
 echo "Starting dev container..."
 docker run -it \
   --name "$CONTAINER_NAME" \
+  --user node \
   -v "$(pwd):/workspace" \
   -v "$HOME/.claude:/home/node/.claude" \
   -e SESSIONS_PATH="/home/node/.claude/projects" \
