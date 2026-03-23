@@ -14,8 +14,8 @@ echo "Starting dev container..."
 docker run -it \
   --name "$CONTAINER_NAME" \
   -v "$(pwd):/workspace" \
-  -v "$HOME/.claude/projects:/home/node/.claude-sessions:ro" \
-  -e SESSIONS_PATH="/home/node/.claude-sessions" \
+  -v "$HOME/.claude:/home/node/.claude" \
+  -e SESSIONS_PATH="/home/node/.claude/projects" \
   -p 3000:3000 \
   -w /workspace \
   "$IMAGE" \
