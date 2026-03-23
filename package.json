@@ -6,6 +6,7 @@
   "main": "dist/server.js",
   "scripts": {
     "dev": "tsx src/server.ts",
+    "start": "tsx src/server.ts",
     "test": "vitest run",
     "build": "tsc"
   },

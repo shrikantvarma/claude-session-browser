@@ -54,6 +54,11 @@ export function initDb(dbPath?: string): Database.Database {
       VALUES (new.rowid, new.content, new.session_id, new.uuid);
     END;
 
+    CREATE TRIGGER IF NOT EXISTS messages_ad AFTER DELETE ON messages BEGIN
+      INSERT INTO messages_fts(messages_fts, rowid, content, session_id, uuid)
+      VALUES ('delete', old.rowid, old.content, old.session_id, old.uuid);
+    END;
+
     CREATE TABLE IF NOT EXISTS file_meta (
       file_path TEXT PRIMARY KEY,
       mtime_ms INTEGER NOT NULL
@@ -179,6 +184,9 @@ export async function indexAllSessions(
       errors++;
     }
   }
+
+  // Always rebuild FTS index to ensure consistency with content table
+  db.exec("INSERT INTO messages_fts(messages_fts) VALUES('rebuild')");
 
   return { indexed, errors };
 }
