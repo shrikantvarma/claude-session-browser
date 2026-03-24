@@ -3,6 +3,7 @@ export interface SessionRow {
   id: string;
   project_path: string;
   project_dir: string;
+  project_name: string;
   started_at: string;
   last_active_at: string;
   duration_ms: number;
@@ -10,6 +11,12 @@ export interface SessionRow {
   model: string | null;
   cwd: string;
   git_branch: string | null;
+  // Forward-compatible fields for Phase 3 organization features
+  display_title?: string;
+  title?: string | null;
+  auto_title?: string | null;
+  tags?: string;
+  is_pinned?: number;
 }
 
 export interface MessageRow {
@@ -32,6 +39,7 @@ export interface SearchResult {
   session: {
     projectPath: string;
     projectDir: string;
+    projectName: string;
     startedAt: string;
     lastActiveAt: string;
     messageCount: number;
@@ -57,5 +65,5 @@ export interface SearchResponse {
 export interface StatsResponse {
   totalSessions: number;
   totalMessages: number;
-  projects: string[];
+  projects: { dir: string; name: string }[];
 }
