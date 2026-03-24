@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from "react-router";
 import { Layout } from "./components/Layout";
 import { SessionList } from "./components/SessionList";
 import { SessionDetail } from "./components/SessionDetail";
+import { SearchResults } from "./components/SearchResults";
 
 function App() {
   return (
@@ -10,12 +11,7 @@ function App() {
         <Route element={<Layout />}>
           <Route index element={<SessionList />} />
           <Route path="session/:id" element={<SessionDetail />} />
-          <Route
-            path="search"
-            element={
-              <div className="p-6 text-text-secondary">Search (Plan 02)</div>
-            }
-          />
+          <Route path="search" element={<SearchResults />} />
         </Route>
       </Routes>
     </BrowserRouter>
