@@ -37,25 +37,30 @@ bash quick-start.sh
 
 The script will:
 1. Detect your sessions directory (default: `~/.claude/projects`)
-2. Let you confirm or provide a custom path
+2. **Prompt you to confirm or type a different path**
 3. Install dependencies
 4. Start the app at **http://localhost:5173**
 
-### Option B: Docker
-
-**Requires:** Docker
-
+You can also skip the prompt by setting the path upfront:
 ```bash
-docker compose up --build
+CLAUDE_SESSIONS_PATH=/path/to/sessions bash quick-start.sh
 ```
 
-Your session files are mounted **read-only** into the container. To use a custom sessions path:
+### Option B: Docker
+
+**Requires:** Docker (no Node.js needed)
+
+Docker doesn't use `quick-start.sh`. Instead, set your sessions path via an environment variable:
 
 ```bash
+# Uses default path: ~/.claude/projects
+docker compose up --build
+
+# Or specify a custom path
 CLAUDE_SESSIONS_PATH=/path/to/sessions docker compose up --build
 ```
 
-The app will be available at **http://localhost:5173**.
+Your session files are mounted **read-only** into the container. The app will be available at **http://localhost:5173**.
 
 ## Configuration
 
