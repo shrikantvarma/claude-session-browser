@@ -138,4 +138,4 @@ Claude Code stores sessions as JSONL files at `~/.claude/projects/<dash-encoded-
 
 ## License
 
-ISC
+[MIT](LICENSE)
