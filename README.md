@@ -36,16 +36,21 @@ The script will:
 
 ### With Docker
 
-```bash
-cp .env.example .env   # optional: customize paths/ports
-bash start-dev.sh
-```
-
-Or directly:
+If you prefer not to install Node.js locally, you can run everything in Docker. Your session files are mounted read-only into the container.
 
 ```bash
+git clone https://github.com/shrikantvarma/claude-session-browser.git
+cd claude-session-browser
 docker compose up --build
 ```
+
+This uses the default sessions path (`~/.claude/projects`). To use a different path:
+
+```bash
+CLAUDE_SESSIONS_PATH=/path/to/sessions docker compose up --build
+```
+
+The app will be available at **http://localhost:5173**.
 
 ## Configuration
 
