@@ -21,5 +21,9 @@ ENV NODE_ENV=production
 ENV PORT=3001
 EXPOSE 3001 5173
 
+# Validate sessions mount before starting
+COPY docker-entrypoint.sh /app/
+ENTRYPOINT ["/app/docker-entrypoint.sh"]
+
 # Start both servers
 CMD ["sh", "-c", "npx tsx src/server.ts & cd frontend && npx vite --host 0.0.0.0 && wait"]
