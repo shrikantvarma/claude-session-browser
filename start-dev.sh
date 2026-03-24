@@ -1,32 +1,25 @@
 #!/bin/bash
-# Start dev container for Claude Code Session Browser
-# Works with Docker Desktop or OrbStack
+# Start with Docker Compose
+# For running without Docker, use: bash quick-start.sh
 
 set -e
 
-IMAGE="mcr.microsoft.com/devcontainers/typescript-node:22"
-CONTAINER_NAME="session-browser-dev"
+# Load .env if present
+if [ -f .env ]; then
+  set -a
+  source .env
+  set +a
+fi
 
-# Stop existing container if running
-docker rm -f "$CONTAINER_NAME" 2>/dev/null || true
+CLAUDE_SESSIONS_PATH="${CLAUDE_SESSIONS_PATH:-$HOME/.claude/projects}"
 
-echo "Starting dev container..."
-docker run -it \
-  --name "$CONTAINER_NAME" \
-  --user node \
-  -v "$(pwd):/workspace" \
-  -v "$HOME/.claude:/home/node/.claude" \
-  -e SESSIONS_PATH="/home/node/.claude/projects" \
-  -p 3000:3000 \
-  -w /workspace \
-  "$IMAGE" \
-  bash -c '
-    echo "Installing Claude Code CLI..."
-    npm install -g @anthropic-ai/claude-code 2>/dev/null
-    echo ""
-    echo "Ready! Run:"
-    echo "  claude login"
-    echo "  claude --dangerously-skip-permissions"
-    echo ""
-    exec bash
-  '
+if [ ! -d "$CLAUDE_SESSIONS_PATH" ]; then
+  echo "Error: Sessions not found at: $CLAUDE_SESSIONS_PATH"
+  echo ""
+  echo "Set CLAUDE_SESSIONS_PATH in .env or as an environment variable."
+  echo "  cp .env.example .env"
+  exit 1
+fi
+
+export CLAUDE_SESSIONS_PATH
+docker compose up --build
