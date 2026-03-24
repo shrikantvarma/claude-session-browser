@@ -1,30 +1,37 @@
 # Claude Session Browser
 
-Browse, search, and organize your past Claude Code sessions in a local web UI.
+A local web app to browse, search, and organize your past [Claude Code](https://docs.anthropic.com/en/docs/claude-code) sessions.
 
-Claude Code stores every conversation as JSONL files in `~/.claude/projects/`. This tool indexes them into SQLite with full-text search and presents them in a fast, searchable interface.
+If you use Claude Code (Anthropic's CLI tool), every conversation is saved as a JSONL file on your machine. This tool indexes those files and gives you a fast, searchable interface to find anything you've discussed.
 
-![Session list](docs/screenshot-sessions.png)
+![Browse all your sessions, filter by project, pin favorites](docs/screenshot-sessions.png)
 
-![Full-text search with highlighted results](docs/screenshot-search.png)
+![Full-text search across every message with highlighted matches](docs/screenshot-search.png)
 
 ## Features
 
 - **Full-text search** across all session messages with highlighted snippets
 - **Filter by project** to focus on a specific codebase
 - **Session detail view** with full conversation history
-- **Resume sessions** — open in VS Code terminal or copy the `claude -r` command
+- **Resume sessions** — open in VS Code or copy the `claude -r` command
 - **Organize** — pin sessions, edit titles, add tags
 - **Markdown export** of any session
 - **Incremental indexing** — only re-parses changed files on startup
 
-## Quick Start
+## Getting Started
 
-Requires Node.js 18+.
+Clone the repo first, then pick **one** of the two methods below:
 
 ```bash
 git clone https://github.com/shrikantvarma/claude-session-browser.git
 cd claude-session-browser
+```
+
+### Option A: Local (recommended)
+
+**Requires:** Node.js 18+
+
+```bash
 bash quick-start.sh
 ```
 
@@ -34,17 +41,15 @@ The script will:
 3. Install dependencies
 4. Start the app at **http://localhost:5173**
 
-### With Docker
+### Option B: Docker
 
-If you prefer not to install Node.js locally, you can run everything in Docker. Your session files are mounted read-only into the container.
+**Requires:** Docker
 
 ```bash
-git clone https://github.com/shrikantvarma/claude-session-browser.git
-cd claude-session-browser
 docker compose up --build
 ```
 
-This uses the default sessions path (`~/.claude/projects`). To use a different path:
+Your session files are mounted **read-only** into the container. To use a custom sessions path:
 
 ```bash
 CLAUDE_SESSIONS_PATH=/path/to/sessions docker compose up --build
@@ -54,38 +59,62 @@ The app will be available at **http://localhost:5173**.
 
 ## Configuration
 
-All settings are optional. Set via environment variables or a `.env` file:
+All settings are optional. Set via environment variables or a `.env` file (copy from `.env.example`):
 
 | Variable | Default | Description |
 |---|---|---|
-| `CLAUDE_SESSIONS_PATH` | `~/.claude/projects` | Path to Claude Code session files |
+| `CLAUDE_SESSIONS_PATH` | `~/.claude/projects` | Where your Claude Code session files live |
 | `PORT` | `5173` | Frontend port |
 | `API_PORT` | `3001` | Backend API port |
 
-## Architecture
+## Troubleshooting
 
-```
-┌─────────────────┐     ┌─────────────────┐
-│  React Frontend │────▶│  Express API    │
-│  Vite + Tailwind│     │  TypeScript     │
-│  :5173          │     │  :3001          │
-└─────────────────┘     └────────┬────────┘
-                                 │
-                        ┌────────▼────────┐
-                        │  SQLite + FTS5  │
-                        │  sessions.db    │
-                        └────────┬────────┘
-                                 │
-                        ┌────────▼────────┐
-                        │  JSONL Files    │
-                        │  ~/.claude/     │
-                        │  projects/      │
-                        └─────────────────┘
+**`better-sqlite3` build error on startup**
+If you see `ERR_DLOPEN_FAILED` or "not valid mach-o file", the native module needs rebuilding for your Node.js version:
+```bash
+npm rebuild better-sqlite3
 ```
 
-**Backend** — Node.js/Express (TypeScript). Parses JSONL session files, indexes into SQLite with FTS5 full-text search, exposes REST API.
+**Port already in use**
+If 5173 or 3001 is taken, set custom ports:
+```bash
+PORT=8080 API_PORT=4000 bash quick-start.sh
+```
 
-**Frontend** — React 19, Vite, Tailwind CSS, TanStack Query, React Router.
+**No session files found**
+Make sure you've used Claude Code at least once. Sessions are stored at `~/.claude/projects/`. You can verify with:
+```bash
+ls ~/.claude/projects/
+```
+
+---
+
+## Contributing
+
+### Architecture
+
+```
+Frontend (React + Vite + Tailwind)  →  Backend (Express + TypeScript)  →  SQLite (FTS5)  →  JSONL files
+:5173                                  :3001                              sessions.db        ~/.claude/projects/
+```
+
+### Dev Setup
+
+```bash
+# Install dependencies (both backend and frontend)
+npm install
+cd frontend && npm install && cd ..
+
+# Start backend
+npm run dev
+
+# Start frontend (separate terminal)
+cd frontend && npm run dev
+
+# Run all tests
+npm test
+cd frontend && npm test
+```
 
 ### API Endpoints
 
@@ -98,28 +127,9 @@ All settings are optional. Set via environment variables or a `.env` file:
 | `POST` | `/api/refresh` | Trigger incremental re-index |
 | `GET` | `/api/stats` | Session/message counts and project list |
 
-## Development
+### Session File Format
 
-```bash
-# Run backend
-npm run dev
-
-# Run frontend (separate terminal)
-cd frontend && npm run dev
-
-# Run all tests
-npm test && cd frontend && npm test
-```
-
-## Session File Format
-
-Claude Code stores sessions as JSONL files at:
-
-```
-~/.claude/projects/<dash-encoded-path>/<uuid>.jsonl
-```
-
-Each line is a JSON object with `uuid`, `parentUuid`, `type`, and `message` fields. The directory name is the project's absolute path with `/` replaced by `-` (e.g., `-Users-you-Code-myapp`).
+Claude Code stores sessions as JSONL files at `~/.claude/projects/<dash-encoded-path>/<uuid>.jsonl`. Each line is a JSON object with `uuid`, `parentUuid`, `type`, and `message` fields. The directory name is the project's absolute path with `/` replaced by `-` (e.g., `-Users-you-Code-myapp`).
 
 ## License
 
