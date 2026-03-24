@@ -50,17 +50,18 @@ CLAUDE_SESSIONS_PATH=/path/to/sessions bash quick-start.sh
 
 **Requires:** Docker (no Node.js needed)
 
-Docker doesn't use `quick-start.sh`. Instead, set your sessions path via an environment variable:
-
+First time — configure your sessions path (only needed once):
 ```bash
-# Uses default path: ~/.claude/projects
-docker compose up --build
-
-# Or specify a custom path
-CLAUDE_SESSIONS_PATH=/path/to/sessions docker compose up --build
+cp .env.example .env
+# Edit .env if your sessions are not at ~/.claude/projects
 ```
 
-Your session files are mounted **read-only** into the container. The app will be available at **http://localhost:5173**.
+Then start:
+```bash
+docker compose up --build
+```
+
+That's it. Docker reads your `.env` file automatically on every run. Your session files are mounted **read-only** into the container. The app will be available at **http://localhost:5173**.
 
 ## Configuration
 
