@@ -23,7 +23,7 @@ Claude Code stores every conversation as JSONL files in `~/.claude/projects/`. T
 Requires Node.js 18+.
 
 ```bash
-git clone https://github.com/your-username/claude-session-browser.git
+git clone https://github.com/shrikantvarma/claude-session-browser.git
 cd claude-session-browser
 bash quick-start.sh
 ```
