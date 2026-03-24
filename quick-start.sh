@@ -20,31 +20,53 @@ echo ""
 
 SESSIONS_PATH="${CLAUDE_SESSIONS_PATH:-}"
 
+# Auto-detect if not provided
 if [ -z "$SESSIONS_PATH" ]; then
-  # Check standard locations
   if [ -d "$HOME/.claude/projects" ]; then
-    SESSIONS_PATH="$HOME/.claude/projects"
+    DEFAULT_PATH="$HOME/.claude/projects"
   elif [ -d "$HOME/.claude-code/projects" ]; then
-    SESSIONS_PATH="$HOME/.claude-code/projects"
+    DEFAULT_PATH="$HOME/.claude-code/projects"
+  else
+    DEFAULT_PATH=""
+  fi
+
+  if [ -n "$DEFAULT_PATH" ]; then
+    echo -e "Sessions path: ${BOLD}${DEFAULT_PATH}${NC}"
+    read -r -p "Press Enter to use this, or type a different path: " USER_PATH
+    if [ -n "$USER_PATH" ]; then
+      # Expand ~ if user typed it
+      SESSIONS_PATH="${USER_PATH/#\~/$HOME}"
+    else
+      SESSIONS_PATH="$DEFAULT_PATH"
+    fi
+  else
+    echo -e "${YELLOW}Could not auto-detect Claude Code sessions.${NC}"
+    echo ""
+    echo "Checked:"
+    echo "  ~/.claude/projects"
+    echo "  ~/.claude-code/projects"
+    echo ""
+    read -r -p "Enter the path to your sessions directory: " USER_PATH
+    if [ -z "$USER_PATH" ]; then
+      echo -e "${RED}No path provided. Exiting.${NC}"
+      exit 1
+    fi
+    SESSIONS_PATH="${USER_PATH/#\~/$HOME}"
   fi
 fi
 
-if [ -z "$SESSIONS_PATH" ] || [ ! -d "$SESSIONS_PATH" ]; then
-  echo -e "${RED}Could not find Claude Code sessions.${NC}"
-  echo ""
-  echo "Looked in:"
-  echo "  ~/.claude/projects"
-  echo "  ~/.claude-code/projects"
-  echo ""
-  echo "If your sessions are elsewhere, set the path:"
-  echo ""
-  echo -e "  ${BOLD}CLAUDE_SESSIONS_PATH=/path/to/sessions bash quick-start.sh${NC}"
-  echo ""
+if [ ! -d "$SESSIONS_PATH" ]; then
+  echo -e "${RED}Directory not found: ${SESSIONS_PATH}${NC}"
   exit 1
 fi
 
 SESSION_COUNT=$(find "$SESSIONS_PATH" -name "*.jsonl" 2>/dev/null | head -100 | wc -l | tr -d ' ')
-echo -e "${GREEN}Found sessions at:${NC} $SESSIONS_PATH ($SESSION_COUNT+ session files)"
+if [ "$SESSION_COUNT" -eq 0 ]; then
+  echo -e "${RED}No .jsonl session files found in: ${SESSIONS_PATH}${NC}"
+  exit 1
+fi
+
+echo -e "${GREEN}Found $SESSION_COUNT+ session files${NC}"
 echo ""
 
 # --- Check Node.js ---
