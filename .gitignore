@@ -4,3 +4,7 @@ dist
 *.db-shm
 *.db-wal
 .env
+.DS_Store
+.planning/
+.devcontainer/
+.playwright-mcp/
