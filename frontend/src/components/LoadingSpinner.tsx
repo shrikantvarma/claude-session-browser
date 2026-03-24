@@ -1,6 +1,6 @@
 export function LoadingSpinner() {
   return (
-    <div className="flex h-64 items-center justify-center">
+    <div role="status" className="flex h-64 items-center justify-center">
       <svg
         className="h-6 w-6 animate-spin text-text-secondary"
         xmlns="http://www.w3.org/2000/svg"
