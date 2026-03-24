@@ -1,15 +1,18 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { useParams, Link } from "react-router";
-import { useSession } from "../api/queries";
+import { useSession, useUpdateSession } from "../api/queries";
 import { formatDuration } from "../lib/dates";
 import { exportAsMarkdown, downloadMarkdown } from "../lib/exportMarkdown";
 import { LoadingSpinner } from "./LoadingSpinner";
 import { EmptyState } from "./EmptyState";
 import { MessageBubble } from "./MessageBubble";
+import { EditableTitle } from "./EditableTitle";
+import { TagInput } from "./TagInput";
 
 export function SessionDetail() {
   const { id } = useParams<{ id: string }>();
   const { data, isLoading, isError, error } = useSession(id ?? "");
+  const mutation = useUpdateSession(id ?? "");
   const [copied, setCopied] = useState(false);
 
   const handleResume = useCallback(async () => {
@@ -29,6 +32,34 @@ export function SessionDetail() {
     const filename = `session-${data.session.id.slice(0, 8)}.md`;
     downloadMarkdown(filename, md);
   }, [data]);
+
+  const handleTitleSave = useCallback(
+    (title: string) => {
+      mutation.mutate({ title });
+    },
+    [mutation],
+  );
+
+  const tags = useMemo(() => {
+    if (!data?.session.tags) return [];
+    try {
+      return JSON.parse(data.session.tags) as string[];
+    } catch {
+      return [];
+    }
+  }, [data?.session.tags]);
+
+  const handleTagsUpdate = useCallback(
+    (newTags: string[]) => {
+      mutation.mutate({ tags: newTags });
+    },
+    [mutation],
+  );
+
+  const handlePinToggle = useCallback(() => {
+    if (!data) return;
+    mutation.mutate({ is_pinned: data.session.is_pinned !== 1 });
+  }, [data, mutation]);
 
   if (isLoading) {
     return <LoadingSpinner />;
@@ -53,6 +84,11 @@ export function SessionDetail() {
   }
 
   const { session, messages } = data;
+  const displayTitle =
+    session.display_title ?? session.auto_title ?? session.project_name;
+  const showSecondary = displayTitle !== session.project_name;
+  const isPinned = session.is_pinned === 1;
+
   const startDate = new Date(session.started_at);
   const dateStr = startDate.toLocaleDateString("en-US", {
     weekday: "long",
@@ -92,15 +128,39 @@ export function SessionDetail() {
               Back
             </Link>
           </div>
-          <h2 className="text-lg font-semibold text-text-primary">
-            {session.project_name}
-          </h2>
+          <EditableTitle value={displayTitle} onSave={handleTitleSave} />
+          {showSecondary && (
+            <div className="mt-0.5 text-sm text-text-tertiary">
+              {session.project_name}
+            </div>
+          )}
           <div className="mt-1 flex items-center gap-3 text-sm text-text-secondary">
-            <span>{dateStr} at {timeStr}</span>
+            <span>
+              {dateStr} at {timeStr}
+            </span>
             <span>{formatDuration(session.duration_ms)}</span>
             <span>{session.message_count} messages</span>
           </div>
           <div className="mt-2 flex items-center gap-2">
+            <button
+              onClick={handlePinToggle}
+              className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs transition-colors hover:bg-bg-secondary hover:text-text-primary ${
+                isPinned ? "text-accent" : "text-text-secondary"
+              }`}
+              aria-label={isPinned ? "Unpin session" : "Pin session"}
+            >
+              <svg
+                className="h-3.5 w-3.5"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill={isPinned ? "currentColor" : "none"}
+                stroke="currentColor"
+                strokeWidth={isPinned ? 0 : 1.5}
+              >
+                <path d="M16 3a1 1 0 0 1 .707.293l4 4a1 1 0 0 1-.187 1.55l-3.11 2.073-.536 2.68a1 1 0 0 1-.473.625l-3.4 2.04V19a1 1 0 0 1-.293.707l-1 1a1 1 0 0 1-1.414 0L8 18.414l-3.293 3.293a1 1 0 0 1-1.414-1.414L6.586 17 4.293 14.707a1 1 0 0 1 0-1.414l1-1A1 1 0 0 1 6 12h2.739l2.04-3.4a1 1 0 0 1 .625-.473l2.68-.536L17.157 4.48a1 1 0 0 1 1.55-.187L16 3Z" />
+              </svg>
+              {isPinned ? "Pinned" : "Pin"}
+            </button>
             <button
               onClick={handleResume}
               className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs text-text-secondary transition-colors hover:bg-bg-secondary hover:text-text-primary"
@@ -141,6 +201,9 @@ export function SessionDetail() {
               </svg>
               Export
             </button>
+          </div>
+          <div className="mt-2 border-t border-border pt-2">
+            <TagInput tags={tags} onUpdate={handleTagsUpdate} />
           </div>
         </div>
       </div>

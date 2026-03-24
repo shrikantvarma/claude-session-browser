@@ -4,9 +4,13 @@ import { describe, it, expect, vi } from "vitest";
 import { SessionDetail } from "./SessionDetail";
 import type { SessionDetailResponse } from "../api/types";
 
-// Mock the useSession hook
+// Mock the query hooks
 vi.mock("../api/queries", () => ({
   useSession: vi.fn(),
+  useUpdateSession: vi.fn(() => ({
+    mutate: vi.fn(),
+    isPending: false,
+  })),
 }));
 
 import { useSession } from "../api/queries";
@@ -18,6 +22,7 @@ const mockSessionData: SessionDetailResponse = {
     id: "session-abc",
     project_path: "users-code-my-project",
     project_dir: "my-project",
+    project_name: "my-project",
     started_at: "2026-03-20T10:00:00Z",
     last_active_at: "2026-03-20T11:30:00Z",
     duration_ms: 5400000,
