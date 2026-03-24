@@ -12,6 +12,7 @@ export interface SearchResult {
   session: {
     projectPath: string;
     projectDir: string;
+    projectName: string;
     startedAt: string;
     lastActiveAt: string;
     messageCount: number;
@@ -53,7 +54,7 @@ export function createRouter(db: Database.Database): Router {
 
       const sessions = db
         .prepare(
-          `SELECT * FROM sessions ${whereClause} ORDER BY last_active_at DESC LIMIT ? OFFSET ?`
+          `SELECT *, COALESCE(title, auto_title, project_name) as display_title FROM sessions ${whereClause} ORDER BY is_pinned DESC, last_active_at DESC LIMIT ? OFFSET ?`
         )
         .all(...queryParams);
 
@@ -71,7 +72,7 @@ export function createRouter(db: Database.Database): Router {
       const { id } = req.params;
 
       const session = db
-        .prepare("SELECT * FROM sessions WHERE id = ?")
+        .prepare("SELECT *, COALESCE(title, auto_title, project_name) as display_title FROM sessions WHERE id = ?")
         .get(id);
 
       if (!session) {
@@ -86,6 +87,55 @@ export function createRouter(db: Database.Database): Router {
         .all(id);
 
       res.json({ session, messages });
+    } catch (err) {
+      res.status(500).json({ error: (err as Error).message });
+    }
+  });
+
+  /**
+   * PATCH /api/sessions/:id - Update session title, tags, and/or pin status.
+   */
+  router.patch("/api/sessions/:id", (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+
+      const session = db
+        .prepare("SELECT id FROM sessions WHERE id = ?")
+        .get(id);
+
+      if (!session) {
+        res.status(404).json({ error: "Session not found" });
+        return;
+      }
+
+      const { title, tags, is_pinned } = req.body as {
+        title?: string;
+        tags?: string[];
+        is_pinned?: boolean;
+      };
+
+      if (title !== undefined) {
+        db.prepare("UPDATE sessions SET title = ? WHERE id = ?").run(
+          title,
+          id
+        );
+      }
+
+      if (tags !== undefined) {
+        db.prepare("UPDATE sessions SET tags = ? WHERE id = ?").run(
+          JSON.stringify(tags),
+          id
+        );
+      }
+
+      if (is_pinned !== undefined) {
+        db.prepare("UPDATE sessions SET is_pinned = ? WHERE id = ?").run(
+          is_pinned ? 1 : 0,
+          id
+        );
+      }
+
+      res.json({ ok: true });
     } catch (err) {
       res.status(500).json({ error: (err as Error).message });
     }
@@ -116,6 +166,7 @@ export function createRouter(db: Database.Database): Router {
             m.timestamp,
             s.project_path,
             s.project_dir,
+            s.project_name,
             s.started_at,
             s.last_active_at,
             s.message_count
@@ -145,6 +196,7 @@ export function createRouter(db: Database.Database): Router {
         session: {
           projectPath: row.project_path,
           projectDir: row.project_dir,
+          projectName: row.project_name,
           startedAt: row.started_at,
           lastActiveAt: row.last_active_at,
           messageCount: row.message_count,
@@ -184,14 +236,17 @@ export function createRouter(db: Database.Database): Router {
 
       const projectRows = db
         .prepare(
-          "SELECT DISTINCT project_dir FROM sessions ORDER BY project_dir"
+          "SELECT DISTINCT project_dir, project_name FROM sessions ORDER BY project_name"
         )
-        .all() as { project_dir: string }[];
+        .all() as { project_dir: string; project_name: string }[];
 
       res.json({
         totalSessions: sessionsCount.total,
         totalMessages: messagesCount.total,
-        projects: projectRows.map((r) => r.project_dir),
+        projects: projectRows.map((r) => ({
+          dir: r.project_dir,
+          name: r.project_name,
+        })),
       });
     } catch (err) {
       res.status(500).json({ error: (err as Error).message });

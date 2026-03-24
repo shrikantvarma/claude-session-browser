@@ -2,6 +2,7 @@ export interface Session {
   id: string;           // UUID from filename
   projectPath: string;  // decoded path from directory name (e.g., /Users/shrikantvarma/Code/revops-product)
   projectDir: string;   // dash-encoded directory name
+  projectName: string;  // human-readable project name (from PROJECT_NAME env or last folder segment)
   startedAt: string;    // ISO timestamp of first message
   lastActiveAt: string; // ISO timestamp of last message
   durationMs: number;   // lastActiveAt - startedAt in milliseconds
@@ -9,6 +10,7 @@ export interface Session {
   model: string | null; // model from first assistant message
   cwd: string;          // working directory from first user message
   gitBranch: string | null; // git branch from first user message
+  autoTitle?: string;       // auto-generated title from first user message
 }
 
 export interface Message {

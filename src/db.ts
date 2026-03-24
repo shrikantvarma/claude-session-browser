@@ -2,6 +2,7 @@ import Database from "better-sqlite3";
 import { statSync } from "node:fs";
 import type { Session, Message } from "./types.js";
 import { discoverSessions, parseSessionFile } from "./parser.js";
+import { generateTitle } from "./titlegen.js";
 
 let _db: Database.Database | null = null;
 
@@ -19,6 +20,7 @@ export function initDb(dbPath?: string): Database.Database {
       id TEXT PRIMARY KEY,
       project_path TEXT NOT NULL,
       project_dir TEXT NOT NULL,
+      project_name TEXT NOT NULL DEFAULT '',
       started_at TEXT NOT NULL,
       last_active_at TEXT NOT NULL,
       duration_ms INTEGER NOT NULL,
@@ -65,8 +67,31 @@ export function initDb(dbPath?: string): Database.Database {
     );
   `);
 
+  migrateSchema(db);
+
   _db = db;
   return db;
+}
+
+/**
+ * Idempotently add organization columns to the sessions table.
+ */
+export function migrateSchema(db: Database.Database): void {
+  const columns = db.pragma("table_info(sessions)") as { name: string }[];
+  const existing = new Set(columns.map((c) => c.name));
+
+  const migrations: [string, string][] = [
+    ["title", "ALTER TABLE sessions ADD COLUMN title TEXT DEFAULT NULL"],
+    ["auto_title", "ALTER TABLE sessions ADD COLUMN auto_title TEXT DEFAULT NULL"],
+    ["tags", "ALTER TABLE sessions ADD COLUMN tags TEXT DEFAULT '[]'"],
+    ["is_pinned", "ALTER TABLE sessions ADD COLUMN is_pinned INTEGER DEFAULT 0"],
+  ];
+
+  for (const [col, sql] of migrations) {
+    if (!existing.has(col)) {
+      db.exec(sql);
+    }
+  }
 }
 
 /**
@@ -80,23 +105,36 @@ export function getDb(): Database.Database {
 }
 
 /**
- * Insert or replace a session row.
+ * Insert a session row, preserving user-set title/tags/pin on re-index.
  */
 export function insertSession(db: Database.Database, session: Session): void {
   const stmt = db.prepare(`
-    INSERT OR REPLACE INTO sessions (
-      id, project_path, project_dir, started_at, last_active_at,
-      duration_ms, message_count, model, cwd, git_branch
+    INSERT INTO sessions (
+      id, project_path, project_dir, project_name, started_at, last_active_at,
+      duration_ms, message_count, model, cwd, git_branch, auto_title
     ) VALUES (
-      @id, @projectPath, @projectDir, @startedAt, @lastActiveAt,
-      @durationMs, @messageCount, @model, @cwd, @gitBranch
+      @id, @projectPath, @projectDir, @projectName, @startedAt, @lastActiveAt,
+      @durationMs, @messageCount, @model, @cwd, @gitBranch, @autoTitle
     )
+    ON CONFLICT(id) DO UPDATE SET
+      project_path = excluded.project_path,
+      project_dir = excluded.project_dir,
+      project_name = excluded.project_name,
+      started_at = excluded.started_at,
+      last_active_at = excluded.last_active_at,
+      duration_ms = excluded.duration_ms,
+      message_count = excluded.message_count,
+      model = excluded.model,
+      cwd = excluded.cwd,
+      git_branch = excluded.git_branch,
+      auto_title = excluded.auto_title
   `);
 
   stmt.run({
     id: session.id,
     projectPath: session.projectPath,
     projectDir: session.projectDir,
+    projectName: session.projectName,
     startedAt: session.startedAt,
     lastActiveAt: session.lastActiveAt,
     durationMs: session.durationMs,
@@ -104,6 +142,7 @@ export function insertSession(db: Database.Database, session: Session): void {
     model: session.model,
     cwd: session.cwd,
     gitBranch: session.gitBranch,
+    autoTitle: session.autoTitle ?? null,
   });
 }
 
@@ -174,6 +213,12 @@ export async function indexAllSessions(
       if (messages.length === 0) {
         continue;
       }
+
+      // Generate auto-title from messages
+      const autoTitle = generateTitle(
+        messages.map((m) => ({ role: m.role, content: m.content }))
+      );
+      session.autoTitle = autoTitle;
 
       insertSession(db, session);
       insertMessages(db, messages);
