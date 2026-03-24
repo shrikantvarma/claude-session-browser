@@ -6,8 +6,8 @@ import { decodePath, discoverSessions, parseSessionFile } from "./parser.js";
 
 describe("decodePath", () => {
   it("converts dash-encoded dir name back to absolute path", () => {
-    expect(decodePath("-Users-shrikantvarma-Code-foo")).toBe(
-      "/Users/shrikantvarma/Code/foo"
+    expect(decodePath("-home-user-projects-foo")).toBe(
+      "/home/user/projects/foo"
     );
   });
 

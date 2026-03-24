@@ -8,13 +8,28 @@ import type { Session, Message, ParsedLine } from "./types.js";
 /**
  * Convert a dash-encoded directory name back to an absolute path.
  * The encoding replaces `/` with `-` and prepends a leading `-`.
- * Example: "-Users-shrikantvarma-Code-foo" -> "/Users/shrikantvarma/Code/foo"
+ * Example: "-home-user-projects-foo" -> "/home/user/projects/foo"
  */
 export function decodePath(dirName: string): string {
   // Remove the leading dash, then replace all remaining dashes with /
   const withoutLeadingDash = dirName.slice(1);
   if (withoutLeadingDash === "") return "/";
   return "/" + withoutLeadingDash.replaceAll("-", "/");
+}
+
+/**
+ * Derive a human-readable project name for a session.
+ * Uses PROJECT_NAME env var for container-local sessions (-workspace),
+ * otherwise extracts the last folder segment from the decoded path.
+ */
+export function deriveProjectName(projectDir: string): string {
+  const projectName = process.env.PROJECT_NAME;
+  if (projectName && projectDir === "-workspace") {
+    return projectName;
+  }
+  const decoded = decodePath(projectDir);
+  const segments = decoded.split("/").filter(Boolean);
+  return segments.slice(-3).join("/") || decoded;
 }
 
 /**
@@ -161,6 +176,7 @@ export async function parseSessionFile(
     id: sessionId,
     projectPath: decodePath(projectDir),
     projectDir,
+    projectName: deriveProjectName(projectDir),
     startedAt,
     lastActiveAt,
     durationMs,

@@ -11,7 +11,8 @@ async function main(): Promise<void> {
   const db = initDb();
 
   // Index all sessions on startup
-  console.log("Indexing sessions from ~/.claude/projects/...");
+  const sessionsPath = process.env.SESSIONS_PATH ?? "~/.claude/projects";
+  console.log(`Indexing sessions from ${sessionsPath}...`);
   const startTime = Date.now();
   const { indexed, errors } = await indexAllSessions(db);
   const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);

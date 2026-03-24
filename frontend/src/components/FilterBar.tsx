@@ -36,8 +36,8 @@ export function FilterBar({
       >
         <option value="">All Projects</option>
         {projects.map((project) => (
-          <option key={project} value={project}>
-            {project}
+          <option key={project.dir} value={project.dir}>
+            {project.name}
           </option>
         ))}
       </select>

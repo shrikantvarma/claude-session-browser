@@ -1,6 +1,6 @@
 export interface Session {
   id: string;           // UUID from filename
-  projectPath: string;  // decoded path from directory name (e.g., /Users/shrikantvarma/Code/revops-product)
+  projectPath: string;  // decoded path from directory name
   projectDir: string;   // dash-encoded directory name
   projectName: string;  // human-readable project name (from PROJECT_NAME env or last folder segment)
   startedAt: string;    // ISO timestamp of first message

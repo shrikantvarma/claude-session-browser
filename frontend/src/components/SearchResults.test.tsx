@@ -23,6 +23,7 @@ const mockSearchData: SearchResponse = {
       session: {
         projectPath: "users-code-my-project",
         projectDir: "my-project",
+        projectName: "my-project",
         startedAt: "2026-03-20T09:00:00Z",
         lastActiveAt: "2026-03-20T11:00:00Z",
         messageCount: 12,
@@ -37,6 +38,7 @@ const mockSearchData: SearchResponse = {
       session: {
         projectPath: "users-code-api",
         projectDir: "api",
+        projectName: "api",
         startedAt: "2026-03-19T13:00:00Z",
         lastActiveAt: "2026-03-19T15:00:00Z",
         messageCount: 8,

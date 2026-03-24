@@ -37,7 +37,7 @@ export function SearchResults() {
                 to={`/session/${result.sessionId}`}
                 className="font-medium text-text-primary hover:text-accent"
               >
-                {result.session.projectDir}
+                {result.session.projectName}
               </Link>
               <span className="text-xs text-text-tertiary">
                 {new Date(result.session.lastActiveAt).toLocaleDateString("en-US", {

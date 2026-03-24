@@ -17,12 +17,28 @@ export function SessionDetail() {
 
   const handleResume = useCallback(async () => {
     if (!data) return;
+    const cwd = data.session.cwd || data.session.project_path;
+    const cmd = `claude -r "${data.session.id}"`;
+    // Copy command to clipboard, then open folder in VS Code
     try {
-      await navigator.clipboard.writeText(`claude -r "${data.session.id}"`);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      await navigator.clipboard.writeText(cmd);
     } catch {
-      // Clipboard API may not be available in all contexts
+      // Clipboard unavailable
+    }
+    window.location.href = `vscode://file${cwd}`;
+    setCopied(true);
+    setTimeout(() => setCopied(false), 4000);
+  }, [data]);
+
+  const handleCopyResume = useCallback(async () => {
+    if (!data) return;
+    const cmd = `claude -r "${data.session.id}"`;
+    try {
+      await navigator.clipboard.writeText(cmd);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 3000);
+    } catch {
+      window.prompt("Copy this command to resume in Claude Code:", cmd);
     }
   }, [data]);
 
@@ -163,6 +179,28 @@ export function SessionDetail() {
             </button>
             <button
               onClick={handleResume}
+              title="Open in VS Code terminal"
+              className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs text-text-secondary transition-colors hover:bg-bg-secondary hover:text-text-primary"
+            >
+              <svg
+                className="h-3.5 w-3.5"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth={1.5}
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="m6.75 7.5 3 2.25-3 2.25m4.5 0h3m-9 8.25h13.5A2.25 2.25 0 0 0 21 18V6a2.25 2.25 0 0 0-2.25-2.25H5.25A2.25 2.25 0 0 0 3 6v12a2.25 2.25 0 0 0 2.25 2.25Z"
+                />
+              </svg>
+              {copied ? "Paste in VS Code terminal" : "Resume"}
+            </button>
+            <button
+              onClick={handleCopyResume}
+              title="Copy resume command"
               className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs text-text-secondary transition-colors hover:bg-bg-secondary hover:text-text-primary"
             >
               <svg
@@ -179,7 +217,7 @@ export function SessionDetail() {
                   d="M15.666 3.888A2.25 2.25 0 0 0 13.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 0 1-.75.75H9.75a.75.75 0 0 1-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 0 1-2.25 2.25H6.75A2.25 2.25 0 0 1 4.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 0 1 1.927-.184"
                 />
               </svg>
-              {copied ? "Copied!" : "Resume"}
+              Copy
             </button>
             <button
               onClick={handleExport}

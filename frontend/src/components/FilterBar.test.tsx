@@ -16,7 +16,11 @@ function setupStatsWithProjects() {
     data: {
       totalSessions: 50,
       totalMessages: 200,
-      projects: ["my-project", "api-server", "frontend"],
+      projects: [
+        { dir: "my-project", name: "my-project" },
+        { dir: "api-server", name: "api-server" },
+        { dir: "frontend", name: "frontend" },
+      ],
     },
     isLoading: false,
     isError: false,
@@ -77,7 +81,7 @@ describe("FilterBar", () => {
     );
 
     const select = screen.getByRole("combobox");
-    await userEvent.selectOptions(select, "my-project");
+    await userEvent.selectOptions(select, ["my-project"]);
     expect(onProjectChange).toHaveBeenCalledWith("my-project");
   });
 
